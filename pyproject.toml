@@ -1,0 +1,31 @@
+[project]
+name = "nexus-kafka"
+version = "0.1.0"
+description = "Prototype Temporal Nexus connector for Kafka"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "aiokafka>=0.11",
+  "nexus-rpc",
+  "temporalio",
+]
+
+[project.scripts]
+nexus-connector = "nexus_kafka.connector:main"
+text-processor = "text_processor.worker:main"
+nexus-devserver = "nexus_kafka.devserver:main"
+
+[tool.uv.sources]
+# Nexus handler callbacks only exist on this branch. uv builds the Rust bridge
+# from source, so the first sync needs cargo and protoc.
+temporalio = { git = "https://github.com/temporalio/sdk-python", branch = "amazzeo/nexus-handler-callbacks-client" }
+# The branch needs an unreleased nexus-rpc. uv ignores the sources of a
+# dependency, so pin the same revision here.
+nexus-rpc = { git = "https://github.com/nexus-rpc/sdk-python", rev = "e1d70abbb9378a8398fd472bd466c5dfa9f1aca7" }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/nexus_kafka", "src/text_processor"]

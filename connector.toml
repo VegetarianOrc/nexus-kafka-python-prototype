@@ -1,0 +1,55 @@
+# Configuration of the Nexus connector.
+
+[temporal]
+address = "localhost:7233"
+namespace = "default"
+
+[kafka]
+bootstrap_servers = "localhost:9092"
+group_id = "nexus-connector"
+auto_offset_reset = "earliest"
+
+[callbacks]
+# The connector runs a worker on this task queue. Completion callbacks of the
+# operations it starts go to this worker.
+task_queue = "nexus-connector-callbacks"
+
+# Each route maps an input topic to a Nexus operation. More than one route can
+# read the same input topic. Each route starts its own operation for each record.
+#
+# Output topic:
+#   output_topic         static topic for results
+#   output_topic_header  Kafka header that holds the topic of each record.
+#                        If the header is missing, output_topic is the fallback.
+#   If no output topic resolves, the connector starts the operation without a
+#   completion callback and writes no result.
+
+# Static output topic.
+[[routes]]
+name = "transform"
+input_topic = "transform.requests"
+endpoint = "text-processor"
+service = "text-processor"
+operation = "transform"
+schedule_to_close_timeout_seconds = 300
+output_topic = "transform.results"
+propagate_headers = ["correlation-id"]
+
+# Output topic from the "reply-topic" header, with a static fallback.
+[[routes]]
+name = "analyze"
+input_topic = "analyze.requests"
+endpoint = "text-processor"
+service = "text-processor"
+operation = "analyze"
+output_topic_header = "reply-topic"
+output_topic = "analyze.results"
+propagate_headers = ["correlation-id"]
+
+# No output topic: start the operation and do not write a result.
+[[routes]]
+name = "audit"
+input_topic = "audit.events"
+endpoint = "text-processor"
+service = "text-processor"
+operation = "analyze"
